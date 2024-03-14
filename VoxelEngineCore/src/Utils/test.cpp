@@ -5,20 +5,31 @@
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
 
+
+#include <filesystem>
 using namespace std;
 string LoadShaderCode(const string& shader_file_name) {
 
+	namespace fs = std::filesystem;
+	fs::path ShaderPath = fs::path(RESOURCES_DIR) / shader_file_name;
+	ifstream shaderFile(ShaderPath, ios::binary);
 	
-	ifstream shaderFile(shader_file_name, ios::binary);
+	if (shaderFile.is_open()) {
+		stringstream shaderData;
+		shaderData << shaderFile.rdbuf();
+		string shaderSource = shaderData.str();
+		shaderFile.close();
+
+		return shaderSource;
+	}
 	
 	
+	
+	cerr << "Failed open shader file" << endl;
+	
+	throw runtime_error("Failed open shader file");
 		
-	stringstream shaderData;
-	shaderData << shaderFile.rdbuf();
-	string shaderSource = shaderData.str();
-	shaderFile.close();
-		
-	return shaderSource;
+	
 
 	
 	
@@ -30,18 +41,21 @@ namespace Window {
 
 		if (!glfwInit()) {
 
+			cerr << "Failed to initialize GLFW" << endl;
 			throw runtime_error("Failed to initialize GLFW");
 			return -1;
 		}
 		glfwWindowHint(GLFW_RESIZABLE, 1);
 		GLFWwindow* window = glfwCreateWindow(800, 500, "VoxelEngine", nullptr, nullptr);
 		if (!window) {
+			cerr << "Failed to initialize Window" << endl;
 			throw runtime_error("Failed to initialize Window");
 			return -1;
 		}
 		glfwMakeContextCurrent(window);
 		
 		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+			cerr << "Failed to initialize GLAD" << endl;
 			throw runtime_error("Failed to initialize GLAD");
 		}
 		// VAO
@@ -98,8 +112,8 @@ namespace Window {
 		
 		
 
-		fragmentShaderSource = LoadShaderCode("E:/VoxelEngine/fragment.glsl");
-		vertexShaderSource = LoadShaderCode("E:/VoxelEngine/vertex.glsl");
+		fragmentShaderSource = LoadShaderCode("fragment.glsl");
+		vertexShaderSource = LoadShaderCode("vertex.glsl");
 		
 		const char* fragmentShaderSourcePtr = fragmentShaderSource.data();
 		const char* vertexShaderSourcePtr = vertexShaderSource.data();
@@ -150,6 +164,7 @@ namespace Window {
 		if (!success) {
 			glGetProgramInfoLog(shaderProgram, 512, NULL, infolog);
 			cerr << "SHADER PROGRAM LINKED FAILED:\n" << infolog << endl;
+			throw runtime_error("SHADER PROGRAM LINKED FAILED");
 			
 
 		}
